@@ -25,7 +25,7 @@ BUILDDIR = $(abspath $(CURDIR)/build)
 #************************************************************************
 
 # path location for Teensy Loader, teensy_post_compile and teensy_reboot
-TOOLSPATH = $(CURDIR)/tools
+#TOOLSPATH = $(CURDIR)/tools
 
 ifeq ($(OS),Windows_NT)
     $(error What is Win Dose?)
@@ -34,6 +34,14 @@ else
     ifeq ($(UNAME_S),Darwin)
         TOOLSPATH = /Applications/Arduino.app/Contents/Java/hardware/tools/
     endif
+endif
+
+ifndef ARDUINO_DIR
+    ifndef TOOLSPATH
+        $(error Couldnt find tool path automatically, set ARDUINO_DIR environment variable to the path of your arduino IDE installation)
+    endif
+else
+    TOOLSPATH = $(ARDUINO_DIR)/hardware/tools
 endif
 
 # path location for Teensy 3 core
@@ -57,7 +65,7 @@ FREERTOSPORT = portable/GCC/ARM_CM4F
 CPPFLAGS = -Wall -g -Os -mthumb -ffunction-sections -fdata-sections -nostdlib -MMD $(OPTIONS) -DTEENSYDUINO=124 -DF_CPU=$(TEENSY_CORE_SPEED) -Isrc -I$(COREPATH) -I$(FREERTOSPATH)/include -I$(FREERTOSPATH)/$(FREERTOSPORT)
 
 # compiler options for C++ only
-CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
+CXXFLAGS = -std=gnu++17 -felide-constructors -fno-exceptions -fno-rtti
 
 # compiler options for C only
 CFLAGS =
@@ -142,26 +150,26 @@ reboot:
 upload: post_compile reboot
 
 $(BUILDDIR)/%.o: %.c
-	@echo "[CC]\t$<"
+	@echo "[CC] $<"
 	@mkdir -p "$(dir $@)"
 	@$(CC) $(CPPFLAGS) $(CFLAGS) $(L_INC) -o "$@" -c "$<"
 
 $(BUILDDIR)/%.o: %.cpp
-	@echo "[CXX]\t$<"
+	@echo "[CXX] $<"
 	@mkdir -p "$(dir $@)"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(L_INC) -o "$@" -c "$<"
 
 $(BUILDDIR)/%.o: %.ino
-	@echo "[CXX]\t$<"
+	@echo "[CXX] $<"
 	@mkdir -p "$(dir $@)"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(L_INC) -o "$@" -x c++ -include Arduino.h -c "$<"
 
 $(TARGET).elf: $(OBJS) $(LDSCRIPT)
-	@echo "[LD]\t$@"
+	@echo "[LD] $@"
 	@$(CC) $(LDFLAGS) -o "$@" $(OBJS) $(LIBS)
 
 %.hex: %.elf
-	@echo "[HEX]\t$@"
+	@echo "[HEX] $@"
 	@$(SIZE) "$<"
 	@$(OBJCOPY) -O ihex -R .eeprom "$<" "$@"
 
